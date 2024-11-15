@@ -1,8 +1,8 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const connectDB = require('./config/db');  // Import the DB config
-const authRouter = require('./routes/authRouter');  // Import your auth router
+const connectDB = require('./Config/db');  // Import the DB config
+const authRouter = require('./Routes/authRouter');  // Import your auth router
 
 dotenv.config();  // Load environment variables
 
