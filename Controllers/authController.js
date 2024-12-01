@@ -2,14 +2,14 @@ const User = require('../Models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
-const { validateEmail } = require('../Utils/common');
+const { validateEmail } = require('../Utils/common.js');
 
 dotenv.config();
 
 // Register User
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, confirmPassword, phone, address } = req.body;
+        const { fname, lname, email, password, confirmPassword, phone, address } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({ message: 'Please enter all fields' });
@@ -35,7 +35,8 @@ exports.register = async (req, res) => {
 
         // Create new user
         const user = new User({
-            name,
+            fname,
+            lname,
             email: email.toLowerCase(),
             password: hashedPassword,
             phone,
@@ -44,7 +45,21 @@ exports.register = async (req, res) => {
 
         // Save user to the database
         await user.save();
-        res.status(201).json({ message: 'User registered successfully' });
+        // Generate JWT token
+        const token = jwt.sign(
+            { userId: user._id, roles: user.roles },
+            process.env.JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+
+        user.password = undefined;
+
+        res.status(200).json({
+            message: 'Signup successful',
+            token,
+            success: true,
+            user
+        });
 
     } catch (error) {
         console.error(error);
@@ -83,10 +98,13 @@ exports.login = async (req, res) => {
             { expiresIn: '30d' }
         );
 
+        user.password = undefined;
+
         res.status(200).json({
             message: 'Login successful',
             token,
-            uid: user._id,
+            success: true,
+            user
         });
 
     } catch (error) {
