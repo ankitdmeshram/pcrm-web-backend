@@ -42,7 +42,8 @@ exports.createProject = async (req, res) => {
             createdAt,
             dueDate,
             updatedAt,
-            member
+            member,
+            lastTaskId: 0,
         });
         res.status(201).send({ success: true, project, message: 'Project created successfully!' });
     } catch (error) {
@@ -219,6 +220,9 @@ exports.createTask = async (req, res) => {
                 message: "Project does not exist",
             });
         }
+        const taskId = Number(projectExists.lastTaskId) + 1;
+        console.log("taskId", taskId, projectExists.lastTaskId);
+        await Project.findByIdAndUpdate(projectId, { lastTaskId: taskId });
         const task = await Task.create({
             taskName,
             projectId,
@@ -230,7 +234,8 @@ exports.createTask = async (req, res) => {
             priority,
             tags,
             createdBy,
-            updatedBy
+            updatedBy,
+            taskId
         });
         res.status(201).send({ success: true, task, message: 'Task created successfully!' });
     } catch (error) {

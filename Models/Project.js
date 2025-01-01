@@ -55,7 +55,12 @@ const projectSchema = new mongoose.Schema({
     other: {
         type: {},
         default: {},
-    }
+    },
+    lastTaskId: {
+        type: Number,
+        required: true,
+    },
+
 });
 
 // Create the Project model
