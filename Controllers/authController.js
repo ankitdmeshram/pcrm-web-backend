@@ -1,7 +1,8 @@
 const User = require('../Models/User');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const Cryptr = require("cryptr");
+const cryptr = new Cryptr(process.env.JWT_SECRET);
 const { validateEmail } = require('../Utils/common.js');
 
 dotenv.config();
@@ -30,15 +31,22 @@ exports.register = async (req, res) => {
         }
 
         // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        let hashedpassword;
+        try {
+            hashedpassword = cryptr.encrypt(password);
+        } catch (err) {
+            return res.status(500).json({
+                success: false,
+                message: "error in hashing password",
+            });
+        }
 
         // Create new user
         const user = new User({
             fname,
             lname,
             email: email.toLowerCase(),
-            password: hashedPassword,
+            password: hashedpassword,
             phone,
             address
         });
@@ -86,9 +94,9 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
         // Compare passwords
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+        const decryptedString = cryptr.decrypt(user.password);
+        if (decryptedString != password) {
+            return res.status(400).json({ message: 'Password Wrong' });
         }
 
         // Generate JWT token
@@ -112,3 +120,48 @@ exports.login = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+// reset password based on otp
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Please enter all fields' });
+        }
+
+        if (validateEmail(email) === false) {
+            return res.status(400).json({ success: false, message: 'Invalid email' });
+        }
+
+        // Check if user exists
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid email' });
+        }
+
+        // Hash the password
+        let hashedpassword;
+        try {
+            hashedpassword = await cryptr.encrypt(password);
+        } catch (err) {
+            return res.status(500).json({
+                success: false,
+                message: "error in hashing password",
+            });
+        }
+
+        // Update password
+        user.password = hashedpassword;
+        await user.save();
+
+        res.status(200).json({
+            message: 'Password reset successful',
+            success: true
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+}

@@ -30,14 +30,9 @@ const taskSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
-    createdBy: {
+    priority: {
         type: String,
-        required: true,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,  // Defaults to current timestamp
-        required: true,
+        default: null,
     },
     tags: {
         type: Array,
@@ -47,14 +42,31 @@ const taskSchema = new mongoose.Schema({
         type: Array,
         default: [],
     },
+    assignedBy: {
+        type: String,
+        default: null,
+    },
+    assignedTo: {
+        type: String,
+        default: null,
+    },
+    createdBy: {
+        type: String,
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,  // Defaults to current timestamp
+        required: true,
+    },
     updatedAt: {
         type: Date,
         default: Date.now,  // Defaults to current timestamp
         required: true,
     },
-    priority: {
+    updatedBy: {
         type: String,
-        default: null,
+        required: true,
     },
 });
 

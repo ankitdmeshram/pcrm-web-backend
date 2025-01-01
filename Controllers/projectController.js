@@ -1,9 +1,9 @@
 const User = require("../Models/User");
 const Project = require("../Models/Project");
-const { validateEmail } = require("../utils/common");
+const Task = require("../Models/Task");
+const { validateEmail } = require("../Utils/common");
 // const { sendMail } = require("./mailController");
 const moment = require('moment');
-const Task = require("../models/Task");
 
 exports.createProject = async (req, res) => {
     try {
@@ -189,6 +189,151 @@ exports.viewProject = async (req, res) => {
     } catch (error) {
         // sendMail("ankit.meshram@brokod.com", 'PCRM - ERROR', `Dear Ankit,\n\n Getting error while viewing project \n\n Kindly check this error on urgently basis.\n\n Error - ${error} \n\n Best regards,\nPCRM`);
 
+        res.status(400).send({ success: false, message: "Something went wrong" });
+    }
+}
+
+exports.createTask = async (req, res) => {
+    try {
+        const { taskName, projectId, description, startDate, endDate, dueDate, status, priority, tags, createdAt, updatedAt } = req.body;
+        const createdBy = req.user.userId;
+        const updatedBy = req.user.userId;
+
+        if (!taskName || !projectId || !createdBy) {
+            return res.status(400).json({
+                success: false,
+                message: "Task name, projectId and createdBy are required",
+            });
+        }
+        const userExists = await User.findById(createdBy);
+        if (!userExists) {
+            return res.status(400).json({
+                success: false,
+                message: "User does not exist",
+            });
+        }
+        const projectExists = await Project.findById(projectId);
+        if (!projectExists) {
+            return res.status(400).json({
+                success: false,
+                message: "Project does not exist",
+            });
+        }
+        const task = await Task.create({
+            taskName,
+            projectId,
+            description,
+            startDate,
+            endDate,
+            dueDate,
+            status,
+            priority,
+            tags,
+            createdBy,
+            updatedBy
+        });
+        res.status(201).send({ success: true, task, message: 'Task created successfully!' });
+    } catch (error) {
+        console.log("error", error);
+        // sendMail("
+        res.status(400).send({ success: false, message: "Something went wrong" });
+    }
+}
+
+exports.allTasks = async (req, res) => {
+    try {
+        let { projectId } = req.body;
+        if (!projectId) {
+            return res.status(400).json({
+                success: false,
+                message: "Project id is required",
+            });
+        }
+        let tasks = await Task.find({ projectId }).sort({ _id: -1 })
+        res.status(200).send({ success: true, tasks, tasksCount: tasks.length });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({ success: false, message: "Something went wrong" });
+    }
+}
+
+exports.updateTask = async (req, res) => {
+    try {
+        const { _id, taskName, projectId, description, startDate, endDate, dueDate, status, priority, customerId, address, city, district, pincode, state, country, tags, createdBy, createdAt, updatedAt, updatedBy } = req.body;
+        if (!taskName || !_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Task name and createdBy are required",
+            });
+        }
+        const userExists = await User.findById(createdBy);
+        if (!userExists) {
+            return res.status(400).json({
+                success: false,
+                message: "User does not exist",
+            });
+        }
+        const task = await Task.findById(_id);
+
+        if (!task) {
+            return res.status(400).json({
+                success: false,
+                message: "Task not found",
+            });
+        }
+
+        const updatedTask = await Task.findByIdAndUpdate(_id, {
+            taskName,
+            projectId,
+            description,
+            startDate,
+            endDate,
+            dueDate,
+            status,
+            priority,
+            tags,
+            createdBy,
+            createdAt,
+            updatedAt: Date.now(),
+            updatedBy
+        }, { new: true });
+        res.status(200).send({ success: true, updatedTask, message: 'Task updated successfully!' });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({ success: false, message: "Something went wrong" });
+    }
+}
+
+exports.deleteTask = async (req, res) => {
+    try {
+        const { _id } = req.body;
+        if (!_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Task id is required",
+            });
+        }
+        await Task.findByIdAndDelete(_id);
+        res.status(200).send({ success: true, message: 'Task deleted successfully!' });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({ success: false, message: "Something went wrong" });
+    }
+}
+
+exports.viewTask = async (req, res) => {
+    try {
+        const { _id } = req.body;
+        if (!_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Task id is required",
+            });
+        }
+        const task = await Task.findById(_id);
+        res.status(200).send({ success: true, task });
+    } catch (error) {
+        console.log("error", error);
         res.status(400).send({ success: false, message: "Something went wrong" });
     }
 }
