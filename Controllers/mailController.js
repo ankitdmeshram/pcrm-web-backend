@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail', 
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -41,7 +41,7 @@ exports.mailContent = (content) => {
                     color: #333;
                     margin: 0;
                     padding: 0;
-                    background: red;
+                    background: linear-gradient(90deg, #eddd229f, #ff000016 52%, #eddd229f);
                 }
       
                 .body {
