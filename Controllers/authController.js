@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const Cryptr = require("cryptr");
 const cryptr = new Cryptr(process.env.JWT_SECRET);
 const { validateEmail } = require('../Utils/common.js');
+const { sendEmail, mailContent } = require('./mailController');
 
 dotenv.config();
 
@@ -61,6 +62,34 @@ exports.register = async (req, res) => {
         );
 
         user.password = undefined;
+
+        // Send welcome email
+        const emailContent = mailContent(`
+        <div class="email-header">
+                        <h1>Welcome to PCRM! 🚀</h1>
+                    </div>
+                    <div class="email-content">
+                        <p>Hi <strong>${fname}</strong>,</p>
+                        <p>Thank you for joining <strong>PCRM</strong>! We’re thrilled to have you on board.</p>
+                        <p>Our platform is designed to simplify project management, boost productivity, and help you achieve your goals effortlessly. Here’s what you can do right away:</p>
+                        <ul>
+                            <li><strong>Create Projects:</strong> Start managing your tasks and workflows.</li>
+                            <li><strong>Collaborate:</strong> Invite your team to work together seamlessly.</li>
+                            <li><strong>Track Progress:</strong> Stay on top of deadlines with real-time updates.</li>
+                        </ul>
+                        <p><strong>Ready to get started?</strong></p>
+                        <a href="https://pcrm.brokod.com/signin" class="cta-button">Log In to Your Account</a>
+                        <p>If you have any questions or need assistance, our support team is here to help. Just reply to this email.</p>
+                        <p>Welcome to the <strong>PCRM</strong> family! We’re excited to be part of your journey.</p>
+                    </div>
+                    <div class="footer">
+                        <p>Best regards,</p>
+                        <p><strong>PCRM Team</strong></p>
+                        <p><a href="https://pcrm.brokod.com">PCRM.BROKOD.COM</a> | <a href="mailto:contact@brokod.com">contact@brokod.com</a></p>
+                    </div>
+          `)
+
+        sendEmail(email, 'Welcome to PCRM 🚀', emailContent);
 
         res.status(200).json({
             message: 'Signup successful',
