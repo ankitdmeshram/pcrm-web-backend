@@ -254,8 +254,15 @@ exports.allTasks = async (req, res) => {
                 message: "Project id is required",
             });
         }
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(400).json({
+                success: false,
+                message: "Project not found",
+            });
+        }
         let tasks = await Task.find({ projectId }).sort({ _id: -1 })
-        res.status(200).send({ success: true, tasks, tasksCount: tasks.length });
+        res.status(200).send({ success: true, tasks, tasksCount: tasks.length, project: project });
     } catch (error) {
         console.log("error", error);
         res.status(400).send({ success: false, message: "Something went wrong" });
