@@ -2,8 +2,9 @@ const User = require("../Models/User");
 const Project = require("../Models/Project");
 const Task = require("../Models/Task");
 const { validateEmail } = require("../Utils/common");
-// const { sendMail } = require("./mailController");
+const { sendEmail, mailContent } = require("./mailController");
 const moment = require('moment');
+const ProjectUser = require("../Models/ProjectUser");
 
 exports.createProject = async (req, res) => {
     try {
@@ -344,6 +345,102 @@ exports.viewTask = async (req, res) => {
         }
         const task = await Task.findById(_id);
         res.status(200).send({ success: true, task });
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({ success: false, message: "Something went wrong" });
+    }
+}
+
+exports.projectUsers = async (req, res) => {
+    try {
+        const { projectId } = req.body;
+        if (!projectId) {
+            return res.status(400).json({
+                success: false,
+                message: "Project id is required",
+            });
+        }
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(400).json({
+                success: false,
+                message: "Project not found",
+            });
+        }
+        let projectUsers = await ProjectUser.find({ projectId });
+        res.status(200).send({ success: true, projectUsers, projectUsersCount: projectUsers.length });
+
+    } catch (error) {
+        console.log("error", error);
+        res.status(400).send({ success: false, message: "Something went wrong" });
+    }
+}
+
+exports.inviteUserToProject = async (req, res) => {
+    try {
+        const { projectId, role, invitedBy, invitedUserEmail } = req.body;
+        if (!projectId || !role || !invitedBy || !invitedUserEmail) {
+            return res.status(400).json({
+                success: false,
+                message: "projectId, role, invitedBy and invitedUserEmail are required",
+            });
+        }
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(400).json({
+                success: false,
+                message: "Project not found",
+            });
+        }
+
+        // delete all previous invited users
+        await ProjectUser.deleteMany({invitedUserEmail, projectId});
+
+        // update the projectUser table with status invited
+        console.log(invitedUserEmail)
+        const updateProjectUserInvitedTable = await ProjectUser.create({
+            projectId,
+            userId: null,
+            role: role,
+            status: 'invited',
+            invitedBy: invitedBy,
+            invitedUserEmail
+        })
+
+        console.log("updateProjectUserInvitedTable", updateProjectUserInvitedTable)
+
+        const emailContent = mailContent(`
+            <div class="email-header">
+            
+            <h1>You’re Invited to Join ${project.projectName}!</h1>
+            </div>
+            <div class="email-content">
+            <p>Hi <strong>${invitedUserEmail}</strong>,</p>
+                <p>You’ve been invited to join the project ${project.projectName} as ${role}.</p>
+
+                <p>Here’s what you can do as part of the project:</p>
+        <ul>
+            <li>Collaborate with the team to achieve project goals.</li>
+            <li>Access and manage tasks, deadlines, and updates.</li>
+            <li>Share insights and contribute to project success.</li>
+        </ul>
+
+         <p><strong>What’s next?</strong></p>
+        <a href="#" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold;">Join Project Now</a>
+        <p style="margin-top: 20px;">If you don’t have an account with <strong>PCRM</strong> yet, no worries! You’ll be prompted to create one when you accept the invitation.</p>
+              <p>If you have any questions or need assistance, our support team is here to help. Just reply to this email.</p>
+            
+                </div>
+            <div class="footer">
+                <p>Best regards,</p>
+                <p><strong>PCRM Team</strong></p>
+                <p><a href="https://pcrm.brokod.com">PCRM.BROKOD.COM</a> | <a href="mailto:contact@brokod.com">Contact@brokod.com</a></p>
+                </div>
+            `)
+
+        sendEmail(invitedUserEmail, 'PCRM - INVITATION', emailContent);
+
+        res.status(200).send({ success: true, message: 'User invited successfully!' });
     } catch (error) {
         console.log("error", error);
         res.status(400).send({ success: false, message: "Something went wrong" });
